@@ -60,7 +60,28 @@
           tbody = create('tbody'),
           $e =    UWA.$element,
           from =  widget.getValue('offset'),
-          to =    widget.getInt('offset') + widget.getInt('limit');
+          to =    widget.getInt('offset') + widget.getInt('limit'),
+          data =  [
+            {title: 'Station Name', 'className': 'station-name', 'tagName': 'title', 'type': 'string'},
+            {title: 'Bikes', 'className': 'station-available-vehicules', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
+            {title: 'Slots', 'className': 'station-available-slots', 'tagName': 'bikes:available-slots', 'type': 'int'}
+          ];
+
+      /*
+       * Header
+       */
+      var thead = create('thead'),
+          tr =    create('tr');
+      for (var j = 0, j_length = data.length; j < j_length; j++)
+      {
+        var column = data[j],
+            th =     create('th');
+        
+        $e(th).setContent(column.title);
+        tr.appendChild(th);
+      }
+      
+      thead.appendChild(tr);
 
       for (var i = from; i < (items.length < to ? items.length : to); i++)
       {
@@ -68,24 +89,28 @@
             td,
             item = items[i];
         
-        //station name
-        td = create('th', {className: 'station-name type-string'});
-        $e(td).setContent(item.getElementsByTagName('title')[0].getText());
-        tr.appendChild(td);
-        
-        //number of bikes
-        td = create('td', {className: 'station-available-vehicules type-int'});
-        $e(td).setContent(item.getElementsByTagName('bikes:available-vehicules')[0].getText());
-        tr.appendChild(td);
-        
-        //number of free slots
-        td = create('td', {className: 'station-available-slots type-int'});
-        $e(td).setContent(item.getElementsByTagName('bikes:available-slots')[0].getText());
-        tr.appendChild(td);
+        for (var j = 0, j_length = data.length; j < j_length; j++)
+        {
+          var column = data[j],
+              column_value = item.getElementsByTagName(column.tagName)[0].getText(),
+              css_class = [column.className, 'type-'+column.type];
+              
+          if (column.type == 'int')
+          {
+            css_class.push(parseInt(column_value) ? 'value-notnull' : 'value-null');
+          }
+
+          td = create('td', {'class': css_class.join(' ')});
+          $e(td).setContent(column_value);
+          tr.appendChild(td);
+          
+          delete css_class, column, column_value, td;
+        }
         
         tbody.appendChild(tr);
       }
 
+      table.appendChild(thead);
       table.appendChild(tbody);
       $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
       $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent());
@@ -96,8 +121,18 @@
       TOOLKIT.getFeed(FEED_URI, buildPager);
     };
   </script>
-  <style type="text/css" media="screen,projection">
+  <style type="text/css" media="all">
+    table{
+      width: 100%;
+    }
     
+    .value-null{
+      background-color: #c00;
+    }
+    
+    .value-notnull{
+      background-color: #0f0;
+    }
   </style>
   <widget:preferences>
     <preference name="limit" type="hidden" defaultValue="20" />
