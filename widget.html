@@ -19,16 +19,96 @@
   <link rel="stylesheet" type="text/css" href="http://www.netvibes.com/themes/uwa/style.css" />
   <script type="text/javascript" src="http://www.netvibes.com/js/UWA/load.js.php?env=Standalone"></script>
   <script type="text/javascript">
+    const FEED_URI = 'http://www.vcub.fr/stations/feed.rss';
+    const BIKE_NS =  'http://dev.vcub.fr/ns/bikes/';
+    const F = function(){};
+    var T = TOOLKIT = {feed: null};
+    var pager = {};
     
+    if (document.location && document.location.hostname == 'localhost') {
+      UWA.proxies.ajax = 'proxy.php';
+    }
+
+    TOOLKIT.getFeed = function(uri, callback){
+      var callback = callback || F;
+
+      UWA.Data.getXml(uri, function(xml){
+        T.feed = xml;
+
+        widget.log('Feed '+uri+' cached.');
+        callback.call(this, T.feed);
+      });
+    };
+
+    function buildPager(feed)
+    {
+      var items =   feed.getElementsByTagName('item'),
+          create =  widget.createElement;
+
+      pager = new UWA.Controls.Pager({
+        module:     widget,
+        limit:      widget.getValue('limit'),
+        offset:     widget.getValue('offset'),
+        dataArray:  items
+      });
+      pager.onChange = function(offset){
+        widget.setValue('offset', offset);
+        buildPager(T.feed);
+      };
+      
+      var table = create('table'),
+          tbody = create('tbody'),
+          $e =    UWA.$element,
+          from =  widget.getValue('offset'),
+          to =    widget.getInt('offset') + widget.getInt('limit');
+
+      for (var i = from; i < (items.length < to ? items.length : to); i++)
+      {
+        var tr = create('tr'),
+            td,
+            item = items[i];
+        
+        //station name
+        td = create('th', {className: 'station-name type-string'});
+        $e(td).setContent(item.getElementsByTagName('title')[0].getText());
+        tr.appendChild(td);
+        
+        //number of bikes
+        td = create('td', {className: 'station-available-vehicules type-int'});
+        $e(td).setContent(item.getElementsByTagName('bikes:available-vehicules')[0].getText());
+        tr.appendChild(td);
+        
+        //number of free slots
+        td = create('td', {className: 'station-available-slots type-int'});
+        $e(td).setContent(item.getElementsByTagName('bikes:available-slots')[0].getText());
+        tr.appendChild(td);
+        
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
+      $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent());
+    }
+
+    widget.onLoad = function(){
+      widget.setValue('offset', 0);
+      TOOLKIT.getFeed(FEED_URI, buildPager);
+    };
   </script>
   <style type="text/css" media="screen,projection">
     
   </style>
   <widget:preferences>
-    
+    <preference name="limit" type="hidden" defaultValue="20" />
+    <preference name="offset" type="hidden" defaultValue="0" />
   </widget:preferences>
 </head>
 <body>
-  <p>Loading</p>
+  <div class="stations-wrapper">
+    <div class="stations-list">Loading...</div>
+    <div class="stations-pagination"></div>
+  </div>
+  
 </body>
 </html>
