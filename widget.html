@@ -62,9 +62,9 @@
           from =  widget.getValue('offset'),
           to =    widget.getInt('offset') + widget.getInt('limit'),
           data =  [
-            {title: 'Station Name', 'className': 'station-name', 'tagName': 'title', 'type': 'string'},
-            {title: 'Bikes', 'className': 'station-available-vehicules', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
-            {title: 'Slots', 'className': 'station-available-slots', 'tagName': 'bikes:available-slots', 'type': 'int'}
+            {title: 'Station Name', 'className': 'station-name', 'nodeType': 'th', 'tagName': 'title', 'type': 'string'},
+            {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
+            {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
           ];
 
       /*
@@ -100,7 +100,7 @@
             css_class.push(parseInt(column_value) ? 'value-notnull' : 'value-null');
           }
 
-          td = create('td', {'class': css_class.join(' ')});
+          td = create(column.nodeType, {'class': css_class.join(' ')});
           $e(td).setContent(column_value);
           tr.appendChild(td);
           
@@ -127,11 +127,23 @@
     }
     
     .value-null{
-      background-color: #c00;
+      background-color: #ffb7b2;
+      color: #c00;
     }
     
     .value-notnull{
-      background-color: #0f0;
+      /*background-color: #d9ffd9;*/
+      color: #008000;
+    }
+    
+    .type-int,
+    .type-float,
+    .type-numeric{
+      text-align: center;
+    }
+    
+    .station-name{
+      font-weight: normal;
     }
   </style>
   <widget:preferences>
