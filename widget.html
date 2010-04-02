@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:widget="http://www.netvibes.com/ns/">
 <head>
   <title>VCUB</title>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="author" content="Oncle Tom" />
   <meta name="website" content="http://case.oncle-tom.net/code/netvibes/" />
   <meta name="version" content="1.0-alpha" />
@@ -18,7 +18,7 @@
   <!--<link rel="rich-icon" type="image/png" href="" />-->
   <link rel="stylesheet" type="text/css" href="http://www.netvibes.com/themes/uwa/style.css" />
   <script type="text/javascript" src="http://www.netvibes.com/js/UWA/load.js.php?env=Standalone"></script>
-  <script type="text/javascript">
+  <script type="text/javascript"><![CDATA[
     const FEED_URI = 'http://www.vcub.fr/stations/feed.rss';
     const BIKE_NS =  'http://dev.vcub.fr/ns/bikes/';
     const F = function(){};
@@ -120,7 +120,7 @@
       widget.setValue('offset', 0);
       TOOLKIT.getFeed(FEED_URI, buildPager);
     };
-  </script>
+  ]]></script>
   <style type="text/css" media="all">
     table{
       width: 100%;
