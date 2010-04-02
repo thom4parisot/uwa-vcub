@@ -6,9 +6,9 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="author" content="Oncle Tom" />
   <meta name="website" content="http://case.oncle-tom.net/code/netvibes/" />
-  <meta name="version" content="1.0-alpha" />
+  <meta name="version" content="1.0-beta" />
   <meta name="description" content="" />
-  <meta name="keywords" content="" />
+  <meta name="keywords" content="vcub, v3, tbc, infotbc, bordeaux, cub, vls, " />
   <meta name="screenshot" content="" />
   <meta name="thumbnail" content="" />
   <meta name="autoRefresh" content="5" />
@@ -25,9 +25,11 @@
     const NS_ACCEPT_TEST_SELECTOR = 'bikes:station-id';
     const F = function(){};
     var T = TOOLKIT = {feed: null, NS_PREFIX_REMOVAL: null};
+    var i18n = {catalogs: {}, translate: function(string){ return string; }};
     var pager = {};
     var $e = UWA.$element,
-        create = widget.createElement;
+        create = widget.createElement,
+        __ = i18n.translate;
     
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
@@ -82,12 +84,14 @@
 
       buildPager(feed);
       buildFavourites(feed, (widget.getValue('favourites') || '').split(','));
+      buildMetadata(feed);
     }
 
     /**
+     * Building the display of favourite stations
      * 
-     * @param {Object} feed
-     * @param {Object} faves
+     * @param {Document} feed XML Document formated as RSS2+GeoRSS
+     * @param {Array} faves Array of Stations ID
      */
     function buildFavourites(feed, faves)
     {
@@ -117,6 +121,24 @@
       }
       
       delete items, filteredItems, table;
+    }
+
+    /**
+     * Displaying metadata
+     * 
+     * @param {Document} feed XML Document formated as RSS2+GeoRSS
+     */
+    function buildMetadata(feed)
+    {
+      var $c = $e(widget.body.getElementsByClassName('metadata')[0]).setContent(''),
+          meta;
+      widget.log('buildMetadata');
+
+      //Last updated at
+      meta = create('p', {'class': 'metadata-updated-at', 'content': 'test'});
+      meta.innerHTML = __('Last updated at')+' ';
+      meta.innerHTML += (new Date(T.getTagNameText(feed, 'pubDate'))).toLocaleString();
+      $c.addContent(meta);
     }
 
     /**
@@ -164,9 +186,10 @@
 
       var tbody = create('tbody'),
           data =  [
-            {title: 'Station Name', 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
-            {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
-            {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
+            {title: __('N°'), 'className': 'station-id', 'nodeType': 'td', 'tagName': 'bikes:station-id', 'type': 'numeric'},
+            {title: __('Station Name'), 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
+            {title: __('Bikes'), 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
+            {title: __('Slots'), 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
           ];
 
       /*
@@ -215,7 +238,7 @@
          * Last Column
          */
         td = create('td', {'class': 'station-favourite'});
-        var fave = create('img', {'src' : 'http://dev.netvibes.com/doc/lib/tpl/netvibes_devdoc3/images/star.png', 'alt': 'Fave?', 'class': 'add-to-fave'});
+        var fave = create('img', {'src' : 'http://dev.netvibes.com/doc/lib/tpl/netvibes_devdoc3/images/star.png', 'alt': __('Fave?'), 'class': 'add-to-fave'});
         
         if (isStationFave(station_id))
         {
@@ -248,12 +271,14 @@
     }
 
     /**
+     * Update the favourite button on click + user preferences
      * 
+     * Must be bound to a DOM Element
      */
     function updateFaveFromSwitchClick()
     {
       var faves = (widget.getValue('favourites') || '').split(','),
-          station_id = this.station_id;
+          station_id = this.station_id || 0;
 
       if (isStationFave(station_id))
       {
@@ -298,6 +323,21 @@
   //]]>
   </script>
   <style type="text/css" media="all">
+    table,
+    table.nv-datagrid{
+      margin-bottom: 1em;
+    }
+
+    /*
+     * UI Helpers
+     */
+    .hidden{
+      display: none;
+    }
+
+    /*
+     * Data representation
+     */
     .value-null{
       background-color: #ffb7b2;
       color: #c00;
@@ -337,6 +377,7 @@
 </head>
 <body>
   <div class="stations-wrapper">
+    <div class="metadata"></div>
     <div class="favourite-stations-list"></div>
     <div class="stations-list">Loading...</div>
     <div class="stations-pagination"></div>
