@@ -22,8 +22,9 @@
     //<![CDATA[
     const FEED_URI = 'http://www.vcub.fr/stations/feed.rss';
     const BIKE_NS =  'http://dev.vcub.fr/ns/bikes/';
+    const NS_ACCEPT_TEST_SELECTOR = 'bikes:station-id';
     const F = function(){};
-    var T = TOOLKIT = {feed: null};
+    var T = TOOLKIT = {feed: null, NS_PREFIX_REMOVAL: null};
     var pager = {};
     
     if (document.location && document.location.hostname == 'localhost') {
@@ -37,6 +38,13 @@
         T.feed = xml;
 
         widget.log('Feed '+uri+' cached.');
+        
+        //do we need to calculate a prefix removal for later queries?
+        if (T.NS_PREFIX_REMOVAL === null && xml.getElementsByTagName('item').length)
+        {
+          T.NS_PREFIX_REMOVAL = xml.getElementsByTagName(NS_ACCEPT_TEST_SELECTOR).length ? '' : /^([^:]+):/
+        }
+        
         callback.call(this, T.feed);
       });
     };
@@ -64,26 +72,18 @@
           to =    widget.getInt('offset') + widget.getInt('limit'),
           data =  [
             {title: 'Station Name', 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
-            {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': ['bikes:available-vehicules', 'available-vehicules'], 'type': 'int'},
-            {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': ['bikes:available-slots', 'available-slots'], 'type': 'int'}
+            {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
+            {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
           ];
 
       /*
-       * Fixing NS lookup (Chromium does not like query with NS:prefix for example
+       * Fixing NS lookup if necessary
        */
-      for (var j = 0, j_length = data.length; j < j_length; j++)
+      if (T.NS_PREFIX_REMOVAL)
       {
-        var column = data[j];
-
-        if (typeof column.tagName === 'object')
-        {
-          column.tagName.each(function(value){
-            if (feed.getElementsByTagName(value).length)
-            {
-              column.tagName = value;
-            }
-          });
-        }
+        data.each(function(column){
+          column.tagName = column.tagName.replace(T.NS_PREFIX_REMOVAL, '');
+        });
       }
 
       /*
@@ -91,15 +91,14 @@
        */
       var thead = create('thead'),
           tr =    create('tr');
-      for (var j = 0, j_length = data.length; j < j_length; j++)
-      {
-        var column = data[j],
-            th =     create('th');
+      
+      data.each(function(column){
+        var th = create('th');
         
         $e(th).setContent(column.title);
         tr.appendChild(th);
-      }
-      
+      });
+
       tr.appendChild(create('th'));
       thead.appendChild(tr);
 
@@ -109,13 +108,15 @@
             td,
             item = items[i];
         
-        for (var j = 0, j_length = data.length; j < j_length; j++)
-        {
-          var column = data[j],
-              domElement = item.getElementsByTagName(column.tagName).length ? item.getElementsByTagName(column.tagName)[0] : null,
-              column_value = domElement ? domElement.textContent : 'N/A',
+        /*
+         * Data column
+         * 
+         * @todo fix textContent for IE... or not?
+         */
+        data.each(function(column){
+          var column_value = item.getElementsByTagName(column.tagName)[0].textContent,
               css_class = [column.className, 'type-'+column.type];
-              
+
           if (column.type == 'int')
           {
             css_class.push(parseInt(column_value) ? 'value-notnull' : 'value-null');
@@ -124,15 +125,15 @@
           td = create(column.nodeType, {'class': css_class.join(' ')});
           $e(td).setContent(column_value);
           tr.appendChild(td);
-          
-          delete css_class, column, column_value, td;
-        }
-        
+
+          delete css_class, column_value, td;
+        });
+
         /*
          * Last Column
          */
         td = create('td', {'class': 'station-favourite'});
-        var fave = create('img', {'src' : 'http://dev.netvibes.com/doc/lib/tpl/netvibes_devdoc3/images/star.png', 'alt': 'Fave?'});
+        var fave = create('img', {'src' : 'http://dev.netvibes.com/doc/lib/tpl/netvibes_devdoc3/images/star.png', 'alt': 'Fave?', 'class': 'add-to-fave'});
         
         td.appendChild(fave);
         tr.appendChild(td);
@@ -168,6 +169,20 @@
     .type-numeric,
     .station-favourite{
       text-align: center;
+    }
+    
+    /*
+     * Add to fave
+     */
+    .add-to-fave{
+      cursor: pointer;
+      opacity: 0.4;
+      filter: alpha(opacity = 40);
+      zoom: 1;
+    }
+    .added-to-fave{
+      opacity: 1;
+      filter: alpha(opacity = 100);
     }
   </style>
   <widget:preferences>
