@@ -2,20 +2,20 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:widget="http://www.netvibes.com/ns/">
 <head>
-  <title>VCUB</title>
+  <title>VCUB - Disponibilité des vélos</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="author" content="Oncle Tom" />
   <meta name="website" content="http://case.oncle-tom.net/code/netvibes/" />
   <meta name="version" content="1.0-beta" />
-  <meta name="description" content="" />
-  <meta name="keywords" content="vcub, v3, tbc, infotbc, bordeaux, cub, vls, " />
-  <meta name="screenshot" content="" />
-  <meta name="thumbnail" content="" />
+  <meta name="description" content="Affichage des disponibilités des vélos en temps quasi-réel. Gestion des stations favorites." />
+  <meta name="keywords" content="vcub, v3, tbc, infotbc, bordeaux, cub, vls, vélo, bicycle, bicyclette" />
+  <meta name="screenshot" content="http://github.com/oncletom/uwa-vcub/raw/master/screenshot.png" />
+  <meta name="thumbnail" content="http://github.com/oncletom/uwa-vcub/raw/master/thumbnail.png" />
   <meta name="autoRefresh" content="5" />
   <meta name="apiVersion" content="1.2" />
   <meta name="debugMode" content="true" />
-  <!--<link rel="icon" type="image/x-icon" href="" />-->
-  <!--<link rel="rich-icon" type="image/png" href="" />-->
+  <link rel="icon" type="image/x-icon" href="http://www.vcub.fr/favicon.ico" />
+  <link rel="rich-icon" type="image/png" href="http://www.vcub.fr/sites/default/themes/vcub2010/favicon.png" />
   <link rel="stylesheet" type="text/css" href="http://www.netvibes.com/themes/uwa/style.css" />
   <script type="text/javascript" src="http://www.netvibes.com/js/UWA/load.js.php?env=Standalone"></script>
   <script type="text/javascript">
@@ -419,11 +419,11 @@
     }
   </style>
   <widget:preferences>
-    <preference name="limit" type="hidden" defaultValue="20" />
     <preference name="offset" type="hidden" defaultValue="0" />
     <preference name="favourites" type="hidden" defaultValue="" />
     <preference name="display-favourites" type="boolean" defaultValue="true" label="Afficher les stations favorites" />
     <preference name="display-stations" type="boolean" defaultValue="true" label="Afficher la liste des stations" />
+    <preference name="limit" type="range" min="5" max="50" step="5" defaultValue="10" label="Nombre de stations par page"></preference>
   </widget:preferences>
 </head>
 <body>
