@@ -64,9 +64,27 @@
           to =    widget.getInt('offset') + widget.getInt('limit'),
           data =  [
             {title: 'Station Name', 'className': 'station-name', 'nodeType': 'th', 'tagName': 'title', 'type': 'string'},
-            {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
-            {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
+            {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': ['bikes:available-vehicules', 'available-vehicules'], 'type': 'int'},
+            {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': ['bikes:available-slots', 'available-slots'], 'type': 'int'}
           ];
+
+      /*
+       * Fixing NS lookup (Chromium does not like query with NS:prefix for example
+       */
+      for (var j = 0, j_length = data.length; j < j_length; j++)
+      {
+        var column = data[j];
+
+        if (typeof column.tagName === 'object')
+        {
+          column.tagName.each(function(value){
+            if (feed.getElementsByTagName(value).length)
+            {
+              column.tagName = value;
+            }
+          });
+        }
+      }
 
       /*
        * Header
@@ -93,7 +111,8 @@
         for (var j = 0, j_length = data.length; j < j_length; j++)
         {
           var column = data[j],
-              column_value = item.getElementsByTagName(column.tagName)[0].getText(),
+              domElement = item.getElementsByTagName(column.tagName).length ? item.getElementsByTagName(column.tagName)[0] : null,
+              column_value = domElement ? domElement.textContent : 'N/A',
               css_class = [column.className, 'type-'+column.type];
               
           if (column.type == 'int')
@@ -121,7 +140,7 @@
       widget.setValue('offset', 0);
       TOOLKIT.getFeed(FEED_URI, buildPager);
     };
-  //]]>
+  //]]>g
   </script>
   <style type="text/css" media="all">
     table{
