@@ -26,7 +26,8 @@
     const F = function(){};
     var T = TOOLKIT = {feed: null, NS_PREFIX_REMOVAL: null};
     var pager = {};
-    var $e = UWA.$element;
+    var $e = UWA.$element,
+        create = widget.createElement;
     
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
@@ -77,8 +78,7 @@
      */
     function buildPager(feed)
     {
-      var items =   feed.getElementsByTagName('item'),
-          create =  widget.createElement;
+      var items =   feed.getElementsByTagName('item');
 
       pager = new UWA.Controls.Pager({
         module:     widget,
@@ -91,10 +91,19 @@
         buildPager(T.feed);
       };
       
-      var table = create('table', {'class': 'nv-datagrid'}),
-          tbody = create('tbody'),
-          from =  widget.getValue('offset'),
-          to =    widget.getInt('offset') + widget.getInt('limit'),
+      var table = create('table', {'class': 'nv-datagrid'});
+      buildTableData(feed, items, table);
+      $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
+      $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent());
+    }
+
+    function buildTableData(feed, items, table, options)
+    {
+      var options = options || {};
+          options.from = options.from || widget.getValue('offset');
+          options.to = options.to || widget.getInt('offset') + widget.getInt('limit');
+
+      var tbody = create('tbody'),
           data =  [
             {title: 'Station Name', 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
             {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
@@ -117,7 +126,7 @@
       tr.appendChild(create('th'));
       thead.appendChild(tr);
 
-      for (var i = from; i < (items.length < to ? items.length : to); i++)
+      for (var i = options.from; i < (items.length < options.to ? items.length : options.to); i++)
       {
         var item = items[i],
             station_id = T.getTagNameText(item, 'bikes:station-id'),
@@ -149,6 +158,14 @@
         td = create('td', {'class': 'station-favourite'});
         var fave = create('img', {'src' : 'http://dev.netvibes.com/doc/lib/tpl/netvibes_devdoc3/images/star.png', 'alt': 'Fave?', 'class': 'add-to-fave'});
         
+        if (isStationFave(station_id))
+        {
+          fave.className += ' added-to-fave';
+        }
+
+        fave.station_id = station_id;
+        fave.onclick = updateFaveFromSwitchClick;
+
         td.appendChild(fave);
         tr.appendChild(td);
         
@@ -157,8 +174,46 @@
 
       table.appendChild(thead);
       table.appendChild(tbody);
-      $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
-      $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent());
+    }
+
+    /**
+     * Returns if a station is already a fave or not
+     * 
+     * @param {Integer} station_id
+     * 
+     * @return {Bool}
+     */
+    function isStationFave(station_id)
+    {
+      return (new RegExp('(^|,)'+station_id+'(,|$)')).test(widget.getValue('favourites') || '') ? true : false;
+    }
+
+    /**
+     * 
+     */
+    function updateFaveFromSwitchClick()
+    {
+      var faves = (widget.getValue('favourites') || '').split(','),
+          station_id = this.station_id;
+
+      if (isStationFave(station_id))
+      {
+        faves.each(function(val, i){
+          if (val == station_id)
+          {
+            delete faves[i];
+          }
+        });
+
+        this.className = this.className.replace(' added-to-fave', '');
+      }
+      else
+      {
+        faves.push(station_id);
+        this.className += ' added-to-fave';
+      }
+
+      widget.setValue('favourites', faves.join(',').replace(',,', ','));
     }
 
     /**
