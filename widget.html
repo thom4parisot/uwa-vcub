@@ -26,11 +26,18 @@
     const F = function(){};
     var T = TOOLKIT = {feed: null, NS_PREFIX_REMOVAL: null};
     var pager = {};
+    var $e = UWA.$element;
     
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
     }
 
+    /**
+     * Retrieves the service feed and preconfigures fixes
+     * 
+     * @param {String} uri Service URI to call
+     * @param {Function} callback Function executed after fetching
+     */
     TOOLKIT.getFeed = function(uri, callback){
       var callback = callback || F;
 
@@ -49,6 +56,25 @@
       });
     };
 
+    /**
+     * Returns the text value of a DOM Query
+     * 
+     * Contains fixes for NS query for various browser
+     * 
+     * @param {Object} el
+     * @param {String} tagName
+     */
+    TOOLKIT.getTagNameText = function(el, tagName){
+      var rs = el.getElementsByTagName(T.NS_PREFIX_REMOVAL ? tagName.replace(T.NS_PREFIX_REMOVAL, '') : tagName);
+      
+      return rs.length ? rs[0].textContent : null;
+    };
+
+    /**
+     * Building the pager based on XML Feed
+     * 
+     * @param {Document} feed XML Document formated as RSS2+GeoRSS
+     */
     function buildPager(feed)
     {
       var items =   feed.getElementsByTagName('item'),
@@ -67,7 +93,6 @@
       
       var table = create('table', {'class': 'nv-datagrid'}),
           tbody = create('tbody'),
-          $e =    UWA.$element,
           from =  widget.getValue('offset'),
           to =    widget.getInt('offset') + widget.getInt('limit'),
           data =  [
@@ -75,16 +100,6 @@
             {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
             {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
           ];
-
-      /*
-       * Fixing NS lookup if necessary
-       */
-      if (T.NS_PREFIX_REMOVAL)
-      {
-        data.each(function(column){
-          column.tagName = column.tagName.replace(T.NS_PREFIX_REMOVAL, '');
-        });
-      }
 
       /*
        * Header
@@ -114,7 +129,7 @@
          * @todo fix textContent for IE... or not?
          */
         data.each(function(column){
-          var column_value = item.getElementsByTagName(column.tagName)[0].textContent,
+          var column_value = T.getTagNameText(item, column.tagName),
               css_class = [column.className, 'type-'+column.type];
 
           if (column.type == 'int')
@@ -147,11 +162,26 @@
       $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent());
     }
 
+    /**
+     * Widget loading
+     */
     widget.onLoad = function(){
+      widget.log('Widget loading');
       widget.setValue('offset', 0);
       TOOLKIT.getFeed(FEED_URI, buildPager);
     };
-  //]]>g
+
+    /**
+     * Widget reloading
+     * 
+     * Basically the same as loading except we remains on the same page
+     * It's just because we think about the user
+     */
+    widget.onRefresh = function(){
+      widget.log('Widget reloading');
+      TOOLKIT.getFeed(FEED_URI, buildPager);
+    };
+  //]]>
   </script>
   <style type="text/css" media="all">
     .value-null{
