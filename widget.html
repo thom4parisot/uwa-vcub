@@ -119,10 +119,11 @@
 
       for (var i = from; i < (items.length < to ? items.length : to); i++)
       {
-        var tr = create('tr', {'class': (i%2 ? 'even' : 'odd')}),
-            td,
-            item = items[i];
-        
+        var item = items[i],
+            station_id = T.getTagNameText(item, 'bikes:station-id'),
+            tr = create('tr', {'class': 'station-'+station_id+' '+(i%2 ? 'even' : 'odd')}),
+            td;
+
         /*
          * Data column
          */
