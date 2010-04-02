@@ -96,7 +96,8 @@
     function buildFavourites(feed, faves)
     {
       var items = feed.getElementsByTagName('item'),
-          filteredItems = [];
+          filteredItems = [],
+          container = $e(widget.body.getElementsByClassName('favourite-stations-list')[0]);
       widget.log('buildFavourites');
       
       for (var i = 0, items_length = items.length; i < items_length; i++)
@@ -109,18 +110,22 @@
         }
       }
 
-      if (filteredItems.length)
+      if (widget.getBool('display-favourites') && filteredItems.length)
       {
         var table = create('table', {'class': 'nv-datagrid'});
         buildTableData(feed, filteredItems, table);
-        $e(widget.body.getElementsByClassName('favourite-stations-list')[0]).setContent(table);
+        
+        container.setContent('<h2>'+__('Favourite Stations')+'</h2>')
+        container.addContent(table);
+        container.removeClassName('hidden');
       }
       else
       {
-        $e(widget.body.getElementsByClassName('favourite-stations-list')[0]).setContent('');
+        container.setContent('');
+        container.addClassName('hidden');
       }
-      
-      delete items, filteredItems, table;
+
+      delete items, filteredItems, table, container;
     }
 
     /**
@@ -148,8 +153,10 @@
      */
     function buildPager(feed)
     {
-      var items = feed.getElementsByTagName('item');
       widget.log('buildPager');
+      var items = feed.getElementsByTagName('item'),
+          container = $e(widget.body.getElementsByClassName('stations-list')[0]),
+          pagerContainer = $e(widget.body.getElementsByClassName('stations-pagination')[0]);
 
       pager = new UWA.Controls.Pager({
         module:     widget,
@@ -161,13 +168,23 @@
         widget.setValue('offset', offset);
         buildPager(T.feed);
       };
-      
-      var table = create('table', {'class': 'nv-datagrid'});
-      buildTableData(feed, items, table);
-      $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
-      $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent()); 
-      
-      delete table, feed, items;
+
+      if (widget.getBool('display-stations') && items.length)
+      {
+        var table = create('table', {'class': 'nv-datagrid'});
+        buildTableData(feed, items, table);
+        container.setContent('<h2>'+__('Stations List')+'</h2>')
+        container.addContent(table);
+        container.removeClassName('hidden');
+        pagerContainer.setContent(pager.getContent()); 
+      }
+      else
+      {
+        container.addClassName('hidden');
+        pagerContainer.addClassName('hidden');
+      }
+
+      delete table, feed, items, container, pagerContainer;
     }
 
     /**
@@ -374,6 +391,8 @@
     <preference name="limit" type="hidden" defaultValue="20" />
     <preference name="offset" type="hidden" defaultValue="0" />
     <preference name="favourites" type="hidden" defaultValue="" />
+    <preference name="display-favourites" type="boolean" defaultValue="true" label="Afficher les stations favorites" />
+    <preference name="display-stations" type="boolean" defaultValue="true" label="Afficher la liste des stations" />
   </widget:preferences>
 </head>
 <body>
@@ -383,6 +402,5 @@
     <div class="stations-list">Loading...</div>
     <div class="stations-pagination"></div>
   </div>
-  
 </body>
 </html>
