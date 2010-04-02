@@ -72,13 +72,62 @@
     };
 
     /**
+     * 
+     * @param {Object} feed
+     */
+    function buildDisplay(feed)
+    {
+      var feed = feed || T.feed;
+      widget.log('buildDisplay');
+
+      buildPager(feed);
+      buildFavourites(feed, (widget.getValue('favourites') || '').split(','));
+    }
+
+    /**
+     * 
+     * @param {Object} feed
+     * @param {Object} faves
+     */
+    function buildFavourites(feed, faves)
+    {
+      var items = feed.getElementsByTagName('item'),
+          filteredItems = [];
+      widget.log('buildFavourites');
+      
+      for (var i = 0, items_length = items.length; i < items_length; i++)
+      {
+        var item = items[i];
+        
+        if (isStationFave(T.getTagNameText(item, 'bikes:station-id')))
+        {
+          filteredItems.push(item);
+        }
+      }
+
+      if (filteredItems.length)
+      {
+        var table = create('table', {'class': 'nv-datagrid'});
+        buildTableData(feed, filteredItems, table);
+        $e(widget.body.getElementsByClassName('favourite-stations-list')[0]).setContent(table);
+      }
+      else
+      {
+        $e(widget.body.getElementsByClassName('favourite-stations-list')[0]).setContent('');
+      }
+      
+      delete items, filteredItems, table;
+    }
+
+    /**
      * Building the pager based on XML Feed
      * 
      * @param {Document} feed XML Document formated as RSS2+GeoRSS
      */
     function buildPager(feed)
     {
-      var items =   feed.getElementsByTagName('item');
+      var items = feed.getElementsByTagName('item');
+      widget.log('buildPager');
 
       pager = new UWA.Controls.Pager({
         module:     widget,
@@ -95,6 +144,8 @@
       buildTableData(feed, items, table);
       $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
       $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent()); 
+      
+      delete table, feed, items;
     }
 
     /**
@@ -222,15 +273,16 @@
       }
 
       widget.setValue('favourites', faves.join(',').replace(',,', ','));
+      buildDisplay(T.feed);
     }
 
     /**
      * Widget loading
      */
-    widget.onLoad = function(){
+    widget.onLoad = function(offset){
       widget.log('Widget loading');
-      widget.setValue('offset', 0);
-      TOOLKIT.getFeed(FEED_URI, buildPager);
+      widget.setValue('offset', offset || 0);
+      TOOLKIT.getFeed(FEED_URI, buildDisplay);
     };
 
     /**
@@ -241,7 +293,7 @@
      */
     widget.onRefresh = function(){
       widget.log('Widget reloading');
-      TOOLKIT.getFeed(FEED_URI, buildPager);
+      widget.onLoad(widget.getInt('offset'));
     };
   //]]>
   </script>
@@ -285,6 +337,7 @@
 </head>
 <body>
   <div class="stations-wrapper">
+    <div class="favourite-stations-list"></div>
     <div class="stations-list">Loading...</div>
     <div class="stations-pagination"></div>
   </div>
