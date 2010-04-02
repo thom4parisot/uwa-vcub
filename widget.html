@@ -25,7 +25,7 @@
     const NS_ACCEPT_TEST_SELECTOR = 'bikes:station-id';
     const F = function(){};
     var T = TOOLKIT = {feed: null, NS_PREFIX_REMOVAL: null};
-    var i18n = {catalogs: {}, translate: function(string){ return string; }};
+    var i18n = {catalogs: {en: {}}, catalog: 'en', translate: function(string){ return string; }, setCatalog: function(catalog){ this.catalog = catalog; }};
     var pager = {};
     var $e = UWA.$element,
         create = widget.createElement,
@@ -34,6 +34,22 @@
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
     }
+
+    /*
+     * I18n overload
+     */
+    i18n.setCatalog = function(catalog){
+      if (!this.catalogs[catalog])
+      {
+        i18n.catalogs[catalog] = {};
+      }
+      
+      i18n.catalog = catalog;
+    };
+
+    __ = i18n.translate = function(string){
+      return i18n.catalogs[i18n.catalog][string] || string;
+    };
 
     /**
      * Retrieves the service feed and preconfigures fixes
@@ -337,6 +353,21 @@
       widget.log('Widget reloading');
       widget.onLoad(widget.getInt('offset'));
     };
+    
+    /*
+     * i18n catalogs
+     */
+    i18n.catalogs.fr = {
+      'Favourite Stations': 'Stations préférées',
+      'Last updated at': 'Dernière mise à jour le',
+      'Stations List': 'Liste des stations',
+      'N°': 'N°',
+      'Station Name': 'Station',
+      'Bikes': 'Vélos',
+      'Slots': 'Emplacements',
+      'Fave?': 'Favori ?'
+    };
+    i18n.setCatalog(widget.locale);
   //]]>
   </script>
   <style type="text/css" media="all">
