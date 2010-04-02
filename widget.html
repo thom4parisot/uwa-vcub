@@ -94,9 +94,17 @@
       var table = create('table', {'class': 'nv-datagrid'});
       buildTableData(feed, items, table);
       $e(widget.body.getElementsByClassName('stations-list')[0]).setContent(table);
-      $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent());
+      $e(widget.body.getElementsByClassName('stations-pagination')[0]).setContent(pager.getContent()); 
     }
 
+    /**
+     * Build a table data based on item list
+     * 
+     * @param {Document} feed
+     * @param {Array} items
+     * @param {Element} table
+     * @param {Object} options
+     */
     function buildTableData(feed, items, table, options)
     {
       var options = options || {};
