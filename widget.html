@@ -67,7 +67,7 @@
     TOOLKIT.getTagNameText = function(el, tagName){
       var rs = el.getElementsByTagName(T.NS_PREFIX_REMOVAL ? tagName.replace(T.NS_PREFIX_REMOVAL, '') : tagName);
       
-      return rs.length ? rs[0].textContent : null;
+      return rs.length ? (!!rs[0].textContent ? rs[0].textContent : rs[0].innerText) : null;
     };
 
     /**
