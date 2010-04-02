@@ -57,13 +57,13 @@
         buildPager(T.feed);
       };
       
-      var table = create('table'),
+      var table = create('table', {'class': 'nv-datagrid'}),
           tbody = create('tbody'),
           $e =    UWA.$element,
           from =  widget.getValue('offset'),
           to =    widget.getInt('offset') + widget.getInt('limit'),
           data =  [
-            {title: 'Station Name', 'className': 'station-name', 'nodeType': 'th', 'tagName': 'title', 'type': 'string'},
+            {title: 'Station Name', 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
             {title: 'Bikes', 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': ['bikes:available-vehicules', 'available-vehicules'], 'type': 'int'},
             {title: 'Slots', 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': ['bikes:available-slots', 'available-slots'], 'type': 'int'}
           ];
@@ -100,11 +100,12 @@
         tr.appendChild(th);
       }
       
+      tr.appendChild(create('th'));
       thead.appendChild(tr);
 
       for (var i = from; i < (items.length < to ? items.length : to); i++)
       {
-        var tr = create('tr'),
+        var tr = create('tr', {'class': (i%2 ? 'even' : 'odd')}),
             td,
             item = items[i];
         
@@ -127,6 +128,15 @@
           delete css_class, column, column_value, td;
         }
         
+        /*
+         * Last Column
+         */
+        td = create('td', {'class': 'station-favourite'});
+        var fave = create('img', {'src' : 'http://dev.netvibes.com/doc/lib/tpl/netvibes_devdoc3/images/star.png', 'alt': 'Fave?'});
+        
+        td.appendChild(fave);
+        tr.appendChild(td);
+        
         tbody.appendChild(tr);
       }
 
@@ -143,10 +153,6 @@
   //]]>g
   </script>
   <style type="text/css" media="all">
-    table{
-      width: 100%;
-    }
-    
     .value-null{
       background-color: #ffb7b2;
       color: #c00;
@@ -159,17 +165,15 @@
     
     .type-int,
     .type-float,
-    .type-numeric{
+    .type-numeric,
+    .station-favourite{
       text-align: center;
-    }
-    
-    .station-name{
-      font-weight: normal;
     }
   </style>
   <widget:preferences>
     <preference name="limit" type="hidden" defaultValue="20" />
     <preference name="offset" type="hidden" defaultValue="0" />
+    <preference name="favourites" type="hidden" defaultValue="" />
   </widget:preferences>
 </head>
 <body>
