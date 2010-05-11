@@ -88,7 +88,7 @@
      */
     function buildFavourites(feed, faves)
     {
-      var items = feed.stations,
+      var items = feed.items,
           filteredItems = [],
           container = $e(widget.body.getElementsByClassName('favourite-stations-list')[0]);
       widget.log('buildFavourites');
@@ -147,7 +147,7 @@
     function buildPager(feed)
     {
       widget.log('buildPager');
-      var items = feed.stations,
+      var items = feed.items,
           container = $e(widget.body.getElementsByClassName('stations-list')[0]),
           pagerContainer = $e(widget.body.getElementsByClassName('stations-pagination')[0]);
 
