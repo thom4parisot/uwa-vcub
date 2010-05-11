@@ -193,7 +193,7 @@
       var options = options || {};
           options.from = options.from || widget.getValue('offset');
           options.to = options.to || widget.getInt('offset') + widget.getInt('limit');
-widget.log(items.length);return;
+
       var tbody = create('tbody'),
           data =  [
             {title: __('N°'), 'className': 'station-id', 'nodeType': 'td', 'tagName': 'bikes:station-id', 'type': 'numeric'},
