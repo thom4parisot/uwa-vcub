@@ -222,7 +222,7 @@ widget.log(items.length);return;
       {
         var item = items[i],
             station_id = item['bikes:station-id'],
-            tr = create('tr', {'class': 'station-'+station_id+' '+(i%2 ? 'even' : 'odd')}),
+            tr = create('tr', {'class': 'station-'+station_id+' '+(i & 1 ? 'odd' : 'even')}),
             td;
 
         /*
