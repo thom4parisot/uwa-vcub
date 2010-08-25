@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="author" content="Oncle Tom" />
   <meta name="website" content="http://case.oncle-tom.net/code/netvibes/" />
-  <meta name="version" content="1.0-beta" />
+  <meta name="version" content="1.0" />
   <meta name="description" content="Affichage des disponibilités des vélos en temps quasi-réel. Gestion des stations favorites." />
   <meta name="keywords" content="vcub, v3, tbc, infotbc, bordeaux, cub, vls, vélo, bicycle, bicyclette" />
   <meta name="screenshot" content="http://github.com/oncletom/uwa-vcub/raw/master/screenshot.png" />
@@ -20,9 +20,9 @@
   <script type="text/javascript" src="http://www.netvibes.com/js/UWA/load.js.php?env=Standalone"></script>
   <script type="text/javascript">
     //<![CDATA[
-    const FEED_URI = 'http://www.vcub.fr/stations/feed/json';
-    const F = function(){};
-    var T = TOOLKIT = {feed: null};
+    var FEED_URI = 'http://www.vcub.fr/stations/feed/json';
+    var F = function(){};
+    var TOOLKIT = {feed: null}, T = TOOLKIT;
     var i18n = {catalogs: {en: {}}, catalog: 'en', translate: function(string){ return string; }, setCatalog: function(catalog){ this.catalog = catalog; }};
     var pager = {};
     var $e = UWA.$element,
@@ -31,6 +31,7 @@
     
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
+      UWA.Data.useJsonRequest = false;
     }
 
     /*
@@ -102,11 +103,14 @@
           filteredItems.push(item);
         }
       }
-
+      
       if (widget.getBool('display-favourites') && filteredItems.length)
       {
         var table = create('table', {'class': 'nv-datagrid'});
-        buildTableData(feed, filteredItems, table);
+        buildTableData(feed, filteredItems, table, {
+          "from": 0,
+          "to":   filteredItems.length
+        });
         
         container.setContent('<h2>'+__('Favourite Stations')+'</h2>')
         container.addContent(table);
@@ -191,8 +195,8 @@
     function buildTableData(feed, items, table, options)
     {
       var options = options || {};
-          options.from = options.from || widget.getValue('offset');
-          options.to = options.to || widget.getInt('offset') + widget.getInt('limit');
+          options.from = typeof options.from === 'number' ? options.from : widget.getValue('offset');
+          options.to = typeof options.to === 'number' ? options.to : widget.getInt('offset') + widget.getInt('limit');
 
       var tbody = create('tbody'),
           data =  [
