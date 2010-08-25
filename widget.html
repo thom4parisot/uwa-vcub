@@ -103,11 +103,14 @@
           filteredItems.push(item);
         }
       }
-
+      
       if (widget.getBool('display-favourites') && filteredItems.length)
       {
         var table = create('table', {'class': 'nv-datagrid'});
-        buildTableData(feed, filteredItems, table);
+        buildTableData(feed, filteredItems, table, {
+          "from": 0,
+          "to":   filteredItems.length
+        });
         
         container.setContent('<h2>'+__('Favourite Stations')+'</h2>')
         container.addContent(table);
@@ -192,8 +195,8 @@
     function buildTableData(feed, items, table, options)
     {
       var options = options || {};
-          options.from = options.from || widget.getValue('offset');
-          options.to = options.to || widget.getInt('offset') + widget.getInt('limit');
+          options.from = typeof options.from === 'number' ? options.from : widget.getValue('offset');
+          options.to = typeof options.to === 'number' ? options.to : widget.getInt('offset') + widget.getInt('limit');
 
       var tbody = create('tbody'),
           data =  [
