@@ -28,6 +28,10 @@
     var $e = UWA.$element,
         create = widget.createElement,
         __ = i18n.translate;
+    /*
+     * Other settings
+     */
+    var stationMapUrlBase = 'http://www.vcub.fr/sites/default/files/stations_maps/map_station_%id%_400x300.png';
     
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
@@ -46,7 +50,7 @@
       i18n.catalog = catalog;
     };
 
-    __ = i18n.translate = function(string){
+    __ = i18n.translate = function(string) {
       return i18n.catalogs[i18n.catalog][string] || string;
     };
 
@@ -56,7 +60,7 @@
      * @param {String} uri Service URI to call
      * @param {Function} callback Function executed after fetching
      */
-    TOOLKIT.getFeed = function(uri, callback){
+    TOOLKIT.getFeed = function(uri, callback) {
       var callback = callback || F;
 
       UWA.Data.getJson(uri, function(json){
@@ -65,6 +69,16 @@
         widget.log('Feed '+uri+' cached.');
         callback.call(this, T.feed);
       });
+    };
+    
+    /**
+     * Returns a station map based on its ID
+     * 
+     * @param {String} stationId
+     * @return {String} Full URL
+     */
+    TOOLKIT.getStationMapUrl = function(stationId) {
+      return stationMapUrlBase.replace(/%id%/, stationId);
     };
 
     /**
@@ -201,7 +215,7 @@
       var tbody = create('tbody'),
           data =  [
             {title: __('N°'), 'className': 'station-id', 'nodeType': 'td', 'tagName': 'bikes:station-id', 'type': 'numeric'},
-            {title: __('Station Name'), 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
+            {title: __('Station Name'), 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string', 'wrapper': '<a href="%guid%" class="link-to-map" onclick="return stationMapDisplay(%id%)">%value%</a>'},
             {title: __('Bikes'), 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
             {title: __('Slots'), 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
           ];
@@ -236,12 +250,23 @@
           var column_value = item[column.tagName],
               css_class = [column.className, 'type-'+column.type];
 
-          if (column.type == 'int')
-          {
+          /*
+           * Add an extra class for integers
+           */
+          if (column.type == 'int'){
             css_class.push(parseInt(column_value) ? 'value-notnull' : 'value-null');
+          }
+          
+          /*
+           * We need a wrapper? Ok, but then do some useful replacements
+           * @todo makes replace generic with all item[%holder%] (but may be slower)
+           */
+          if (column.wrapper){
+            column_value = column.wrapper.replace('%value%', column_value).replace('%guid%', item.guid).replace('%id%', station_id);
           }
 
           td = create(column.nodeType, {'class': css_class.join(' ')});
+          td.stationId = station_id;
           $e(td).setContent(column_value);
           tr.appendChild(td);
 
@@ -282,6 +307,31 @@
     function isStationFave(station_id)
     {
       return (new RegExp('(^|,)'+station_id+'(,|$)')).test(widget.getValue('favourites') || '') ? true : false;
+    }
+    
+    /**
+     * Displays a station map in the GUI
+     * 
+     * @param {String} stationId
+     * @return {boolean}
+     */
+    function stationMapDisplay(stationId){
+      var holder = widget.createElement('div'),
+          html = '';
+      holder.className = 'station-map-preview';
+
+      holder.setContent('<img class="station-map-img" src="'+TOOLKIT.getStationMapUrl(stationId)+'" alt="" />');
+      widget.body.appendChild(holder);
+      holder.onclick = stationMapHide;
+      
+      return false;
+    }
+    
+    /**
+     * Hide displayed station map
+     */
+    function stationMapHide(){
+      widget.body.getElementsByClassName('station-map-preview')[0].remove();
     }
 
     /**
@@ -353,6 +403,10 @@
   //]]>
   </script>
   <style type="text/css" media="all">
+    .moduleContent{
+      position: relative;
+    }
+    
     table,
     .metadata,
     table.nv-datagrid{
@@ -385,6 +439,26 @@
     .station-favourite{
       text-align: center;
     }
+    
+    /*
+     * Map
+     */
+    .station-map-preview{
+      background-color: #cfe9f1;
+      background-color: rgba(0, 0, 0, .5);
+      cursor: pointer;
+      height: 100%;
+      left: 0;
+      position: absolute;
+      text-align: center;
+      top: 0;
+      vertical-align: middle;
+      width: 100%;
+    }
+      .station-map-img{
+        border: 1px solid #666;
+        margin-top: 3em;
+      }
     
     /*
      * Add to fave
