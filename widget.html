@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="author" content="Oncle Tom" />
   <meta name="website" content="http://case.oncle-tom.net/code/netvibes/" />
-  <meta name="version" content="1.0" />
+  <meta name="version" content="1.1dev" />
   <meta name="description" content="Affichage des disponibilités des vélos en temps quasi-réel. Gestion des stations favorites." />
   <meta name="keywords" content="vcub, v3, tbc, infotbc, bordeaux, cub, vls, vélo, bicycle, bicyclette" />
   <meta name="screenshot" content="http://github.com/oncletom/uwa-vcub/raw/master/screenshot.png" />
@@ -319,6 +319,8 @@
      * Widget loading
      */
     widget.onLoad = function(offset){
+      i18n.setCatalog(widget.getValue('language') || widget.locale);
+
       widget.log('Widget loading');
       widget.setValue('offset', offset || 0);
       TOOLKIT.getFeed(FEED_URI, buildDisplay);
@@ -348,7 +350,6 @@
       'Slots': 'Emplacements',
       'Fave?': 'Favori ?'
     };
-    i18n.setCatalog(widget.locale);
   //]]>
   </script>
   <style type="text/css" media="all">
@@ -405,6 +406,11 @@
     <preference name="display-favourites" type="boolean" defaultValue="true" label="Afficher les stations favorites" />
     <preference name="display-stations" type="boolean" defaultValue="true" label="Afficher la liste des stations" />
     <preference name="limit" type="range" min="5" max="50" step="5" defaultValue="10" label="Nombre de stations par page"></preference>
+    <preference name="language" type="list" label="Langue préférée" defaultValue="fr">
+      <option value="" label="Celle du navigateur (défaut)" />
+      <option value="en" label="English" />
+      <option value="fr" label="French" />
+    </preference>
   </widget:preferences>
 </head>
 <body>
