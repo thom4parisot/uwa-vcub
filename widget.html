@@ -113,13 +113,13 @@
           distance = '';
 
       if (seconds < 60) {
-        distance = __('less than a minute ago');
+        distance = __('&lt; 1 min.');
       }
       else if (seconds < 60*5) {
-        distance = __('about %s minutes ago', Math.floor(seconds / 60));
+        distance = __('~ %s minutes', Math.floor(seconds / 60));
       }
       else {
-        distance = __('more than 5 minutes ago');
+        distance = __('&gt; 5 minutes');
       }
 
       return distance;
@@ -517,10 +517,10 @@
      */
     i18n.catalogs.fr = {
       'Favourite Stations': 'Stations préférées',
-      'Updated %s': 'Mis à jour %s',
-      'less than a minute ago': 'il y a moins d\'une minute',
-      'about %s minutes ago': 'il y a environ %s minutes',
-      'more than 5 minutes ago': 'il y a plus de 5 minutes',
+      'Updated %s': '<abbr title="Mis à jour">Màj</abbr> %s',
+      '&lt; 1 min.': '&lt; 1 min.',
+      '~ %s minutes': '~ %s minutes',
+      '&gt; 5 minutes': '&gt; 5 minutes',
       'Stations List': 'Liste des stations',
       'N°': 'N°',
       'Station Name': 'Station',
