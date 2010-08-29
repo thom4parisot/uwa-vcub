@@ -50,8 +50,23 @@
       i18n.catalog = catalog;
     };
 
-    __ = i18n.translate = function(string) {
-      return i18n.catalogs[i18n.catalog][string] || string;
+    /**
+     * Translate a string
+     * 
+     * Enables replacements since 1.1
+     * 
+     * @version 1.1
+     * @param {String} string
+     * @param {Array} replacements
+     * @return {String}
+     */
+    __ = i18n.translate = function(string, replacements) {
+      var replacements = replacements || [],
+          replacement_index = 0;
+
+      return (i18n.catalogs[i18n.catalog][string] || string).replace(/%s/g, function(){
+        return replacements[replacement_index++];
+      });
     };
 
     /**
@@ -83,6 +98,31 @@
       ClonedObject.prototype = object;
 
       return new ClonedObject;
+    };
+    
+    /**
+     * Returns the distance between 2 dates
+     * 
+     * @since 1.2
+     * @param {Object} dateTo
+     * @param {Object} dateFrom
+     */
+    TOOLKIT.getTimeDistance = function (dateFrom, dateTo) {
+      var dateTo = dateTo || new Date,
+          seconds = Math.floor((dateTo.getTime() - dateFrom.getTime()) / 1000),
+          distance = '';
+
+      if (seconds < 60) {
+        distance = __('less than a minute ago');
+      }
+      else if (seconds < 60*5) {
+        distance = __('about %s minutes ago', Math.floor(seconds / 60));
+      }
+      else {
+        distance = __('more than 5 minutes ago');
+      }
+
+      return distance;
     };
     
     /**
@@ -179,8 +219,7 @@
        * Last Updated at field
        */
       meta = create('p', {'class': 'metadata-updated-at', 'content': 'test'});
-      meta.innerHTML = __('Last updated at')+' ';
-      meta.innerHTML += (new Date(feed['pubDate'])).toLocaleString();
+      meta.innerHTML = __('Updated %s', [T.getTimeDistance(new Date(feed['pubDate']))]);
       $c.addContent(meta);
 
       /*
@@ -195,7 +234,6 @@
           this.searchQuery = this.value;
         }
       };
-      
       $c.addContent(meta);
     }
 
@@ -368,7 +406,6 @@
      * Returns if a station is already a fave or not
      * 
      * @param {Integer} station_id
-     * 
      * @return {Bool}
      */
     function isStationFave(station_id)
@@ -486,7 +523,10 @@
      */
     i18n.catalogs.fr = {
       'Favourite Stations': 'Stations préférées',
-      'Last updated at': 'Dernière mise à jour le',
+      'Updated %s': 'Mis à jour %s',
+      'less than a minute ago': 'il y a moins d\'une minute',
+      'about %s minutes ago': 'il y a environ %s minutes',
+      'more than 5 minutes ago': 'il y a plus de 5 minutes',
       'Stations List': 'Liste des stations',
       'N°': 'N°',
       'Station Name': 'Station',
