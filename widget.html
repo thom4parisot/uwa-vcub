@@ -441,11 +441,25 @@
      * @since 1.2
      */
     widget.onSearch = function(query, isSearch){
+      /*
+       * Force data as a user can search through Netvibes UI
+       */
+      widget.body.getElementsByClassName('search-input')[0].value = query;
+
       buildDisplay(T.feed, function(feed){
         return filterSearch(feed, query);
       });
 
       return false;
+    };
+    
+    /**
+     * Cancels search
+     * 
+     * @since 1.2
+     */
+    widget.onResetSearch = function(){
+      widget.onSearch('');
     };
     
     /*
@@ -554,7 +568,7 @@
   <div class="stations-wrapper">
     <div class="search">
       <form target="" method="post" onkeyup="widget.onSearch(this.q.value, false); return false;">
-        <input type="search" name="q" value="" />
+        <input type="search" class="search-input" name="q" value="" />
       </form>
     </div>
 
