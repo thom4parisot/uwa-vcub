@@ -70,6 +70,20 @@
         callback.call(this, T.feed);
       });
     };
+
+    /**
+     * Object cloning
+     * 
+     * @since 1.2
+     * @see   http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-a-javascript-object/796738#796738
+     * @param {Object} object
+     */
+    TOOLKIT.clone = function(object) {
+      var ClonedObject = function(){};
+      ClonedObject.prototype = object;
+
+      return new ClonedObject;
+    };
     
     /**
      * Returns a station map based on its ID
@@ -84,11 +98,20 @@
     /**
      * 
      * @param {Object} feed
+     * @param {Function}  filter
      */
-    function buildDisplay(feed)
+    function buildDisplay(feed, filter)
     {
-      var feed = feed || T.feed;
+      var feed = T.clone(feed || T.feed);
+
       widget.log('buildDisplay');
+      
+      /*
+       * Filtering enabled
+       */
+      if (filter instanceof Function) {
+        feed.items = filter.call(this, feed.items);
+      }
 
       buildPager(feed);
       buildFavourites(feed, (widget.getValue('favourites') || '').split(','));
@@ -298,6 +321,31 @@
     }
 
     /**
+     * Filter items on a given query
+     * 
+     * @since 1.2
+     * @param {Object} feed
+     * @param {Object} query
+     */
+    function filterSearch(items, query)
+    {
+      /*
+       * Transform query as a regexp
+       */
+      var regQuery = query.replace(/\W/g, ' ').replace(/(^\s+|\s+$)/g, '').replace(/\s+/g, ' ').replace(/ /g, '.*');
+      widget.log('regQuery: '+regQuery);
+      
+      /*
+       * Filter elements
+       */
+      var filteredItems = items.filter(function(item, i){
+        return item.title.match(new RegExp(regQuery, "gi"));
+      });
+
+      return filteredItems;
+    }
+
+    /**
      * Returns if a station is already a fave or not
      * 
      * @param {Integer} station_id
@@ -385,6 +433,19 @@
     widget.onRefresh = function(){
       widget.log('Widget reloading');
       widget.onLoad(widget.getInt('offset'));
+    };
+    
+    /**
+     * Widget search
+     * 
+     * @since 1.2
+     */
+    widget.onSearch = function(query, isSearch){
+      buildDisplay(T.feed, function(feed){
+        return filterSearch(feed, query);
+      });
+
+      return false;
     };
     
     /*
@@ -491,6 +552,12 @@
 </head>
 <body>
   <div class="stations-wrapper">
+    <div class="search">
+      <form target="" method="post" onkeyup="widget.onSearch(this.q.value, false); return false;">
+        <input type="search" name="q" value="" />
+      </form>
+    </div>
+
     <div class="metadata"></div>
     <div class="favourite-stations-list"></div>
     <div class="stations-list">Loading...</div>
