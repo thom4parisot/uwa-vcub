@@ -6,7 +6,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <meta name="author" content="Oncle Tom" />
   <meta name="website" content="http://case.oncle-tom.net/code/netvibes/" />
-  <meta name="version" content="1.0" />
+  <meta name="version" content="1.2" />
   <meta name="description" content="Affichage des disponibilités des vélos en temps quasi-réel. Gestion des stations favorites." />
   <meta name="keywords" content="vcub, v3, tbc, infotbc, bordeaux, cub, vls, vélo, bicycle, bicyclette" />
   <meta name="screenshot" content="http://github.com/oncletom/uwa-vcub/raw/master/screenshot.png" />
@@ -28,6 +28,10 @@
     var $e = UWA.$element,
         create = widget.createElement,
         __ = i18n.translate;
+    /*
+     * Other settings
+     */
+    var stationMapUrlBase = 'http://www.vcub.fr/sites/default/files/stations_maps/map_station_%id%_400x300.png';
     
     if (document.location && document.location.hostname == 'localhost') {
       UWA.proxies.ajax = 'proxy.php';
@@ -46,8 +50,23 @@
       i18n.catalog = catalog;
     };
 
-    __ = i18n.translate = function(string){
-      return i18n.catalogs[i18n.catalog][string] || string;
+    /**
+     * Translate a string
+     * 
+     * Enables replacements since 1.1
+     * 
+     * @version 1.1
+     * @param {String} string
+     * @param {Array} replacements
+     * @return {String}
+     */
+    __ = i18n.translate = function(string, replacements) {
+      var replacements = replacements || [],
+          replacement_index = 0;
+
+      return (i18n.catalogs[i18n.catalog][string] || string).replace(/%s/g, function(){
+        return replacements[replacement_index++];
+      });
     };
 
     /**
@@ -56,7 +75,7 @@
      * @param {String} uri Service URI to call
      * @param {Function} callback Function executed after fetching
      */
-    TOOLKIT.getFeed = function(uri, callback){
+    TOOLKIT.getFeed = function(uri, callback) {
       var callback = callback || F;
 
       UWA.Data.getJson(uri, function(json){
@@ -68,17 +87,77 @@
     };
 
     /**
+     * Object cloning
+     * 
+     * @since 1.2
+     * @see   http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-clone-a-javascript-object/796738#796738
+     * @param {Object} object
+     */
+    TOOLKIT.clone = function(object) {
+      var ClonedObject = function(){};
+      ClonedObject.prototype = object;
+
+      return new ClonedObject;
+    };
+    
+    /**
+     * Returns the distance between 2 dates
+     * 
+     * @since 1.2
+     * @param {Object} dateTo
+     * @param {Object} dateFrom
+     */
+    TOOLKIT.getTimeDistance = function (dateFrom, dateTo) {
+      var dateTo = dateTo || new Date,
+          seconds = Math.floor((dateTo.getTime() - dateFrom.getTime()) / 1000),
+          distance = '';
+
+      if (seconds < 60) {
+        distance = __('less than a minute ago');
+      }
+      else if (seconds < 60*5) {
+        distance = __('about %s minutes ago', Math.floor(seconds / 60));
+      }
+      else {
+        distance = __('more than 5 minutes ago');
+      }
+
+      return distance;
+    };
+    
+    /**
+     * Returns a station map based on its ID
+     * 
+     * @param {String} stationId
+     * @return {String} Full URL
+     */
+    TOOLKIT.getStationMapUrl = function(stationId) {
+      return stationMapUrlBase.replace(/%id%/, stationId);
+    };
+
+    /**
      * 
      * @param {Object} feed
+     * @param {Function}  filter
      */
-    function buildDisplay(feed)
+    function buildDisplay(feed, filter)
     {
-      var feed = feed || T.feed;
+      var feed = T.clone(feed || T.feed);
+
       widget.log('buildDisplay');
+      
+      /*
+       * Filtering enabled
+       */
+      if (filter instanceof Function) {
+        feed.items = filter.call(this, feed.items);
+      }
+      else {
+        buildMetadata(feed);
+      }
 
       buildPager(feed);
       buildFavourites(feed, (widget.getValue('favourites') || '').split(','));
-      buildMetadata(feed);
     }
 
     /**
@@ -94,16 +173,10 @@
           container = $e(widget.body.getElementsByClassName('favourite-stations-list')[0]);
       widget.log('buildFavourites');
 
-      for (var i = 0, items_length = items.length; i < items_length; i++)
-      {
-        var item = items[i];
-        
-        if (isStationFave(item['bikes:station-id']))
-        {
-          filteredItems.push(item);
-        }
-      }
-      
+      filteredItems = items.filter(function(item){
+        return isStationFave(item['bikes:station-id']);
+      });
+
       if (widget.getBool('display-favourites') && filteredItems.length)
       {
         var table = create('table', {'class': 'nv-datagrid'});
@@ -136,10 +209,25 @@
           meta;
       widget.log('buildMetadata');
 
-      //Last updated at
+      /*
+       * Last Updated at field
+       */
       meta = create('p', {'class': 'metadata-updated-at', 'content': 'test'});
-      meta.innerHTML = __('Last updated at')+' ';
-      meta.innerHTML += (new Date(feed['pubDate'])).toLocaleString();
+      meta.innerHTML = __('Updated %s', [T.getTimeDistance(new Date(feed['pubDate']))]);
+      $c.addContent(meta);
+
+      /*
+       * Search Input
+       * We fires the event only if the content has changed; to avoid collision with keyboard combos
+       */
+      meta = create('input', {'class': 'search-input', 'autocomplete': 'off', 'name': 'q', 'type': 'input', 'placeholder': __('Type a name to filter list'), 'title': __('Type a name to filter list')});
+      meta.searchQuery = '';
+      meta.onkeyup = function() {
+        if (this.searchQuery != this.value) {
+          widget.onSearch(this.value, false);
+          this.searchQuery = this.value;
+        }
+      };
       $c.addContent(meta);
     }
 
@@ -201,7 +289,7 @@
       var tbody = create('tbody'),
           data =  [
             {title: __('N°'), 'className': 'station-id', 'nodeType': 'td', 'tagName': 'bikes:station-id', 'type': 'numeric'},
-            {title: __('Station Name'), 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string'},
+            {title: __('Station Name'), 'className': 'station-name', 'nodeType': 'td', 'tagName': 'title', 'type': 'string', 'wrapper': '<a href="%guid%" class="link-to-map" onclick="return stationMapDisplay(%id%)">%value%</a>'},
             {title: __('Bikes'), 'className': 'station-available-vehicules', 'nodeType': 'td', 'tagName': 'bikes:available-vehicules', 'type': 'int'},
             {title: __('Slots'), 'className': 'station-available-slots', 'nodeType': 'td', 'tagName': 'bikes:available-slots', 'type': 'int'}
           ];
@@ -236,12 +324,23 @@
           var column_value = item[column.tagName],
               css_class = [column.className, 'type-'+column.type];
 
-          if (column.type == 'int')
-          {
+          /*
+           * Add an extra class for integers
+           */
+          if (column.type == 'int'){
             css_class.push(parseInt(column_value) ? 'value-notnull' : 'value-null');
+          }
+          
+          /*
+           * We need a wrapper? Ok, but then do some useful replacements
+           * @todo makes replace generic with all item[%holder%] (but may be slower)
+           */
+          if (column.wrapper){
+            column_value = column.wrapper.replace('%value%', column_value).replace('%guid%', item.guid).replace('%id%', station_id);
           }
 
           td = create(column.nodeType, {'class': css_class.join(' ')});
+          td.stationId = station_id;
           $e(td).setContent(column_value);
           tr.appendChild(td);
 
@@ -273,15 +372,64 @@
     }
 
     /**
+     * Filter items on a given query
+     * 
+     * @since 1.2
+     * @param {Object} feed
+     * @param {Object} query
+     */
+    function filterSearch(items, query)
+    {
+      /*
+       * Transform query as a regexp
+       */
+      var regQuery = query.replace(/\W/g, ' ').replace(/(^\s+|\s+$)/g, '').replace(/\s+/g, ' ').replace(/ /g, '.*');
+      widget.log('regQuery: '+regQuery);
+      
+      /*
+       * Filter elements
+       */
+      var filteredItems = items.filter(function(item, i){
+        return item.title.match(new RegExp(regQuery, "gi"));
+      });
+
+      return filteredItems;
+    }
+
+    /**
      * Returns if a station is already a fave or not
      * 
      * @param {Integer} station_id
-     * 
      * @return {Bool}
      */
     function isStationFave(station_id)
     {
       return (new RegExp('(^|,)'+station_id+'(,|$)')).test(widget.getValue('favourites') || '') ? true : false;
+    }
+    
+    /**
+     * Displays a station map in the GUI
+     * 
+     * @param {String} stationId
+     * @return {boolean}
+     */
+    function stationMapDisplay(stationId){
+      var holder = widget.createElement('div'),
+          html = '';
+      holder.className = 'station-map-preview';
+
+      holder.setContent('<img class="station-map-img" src="'+TOOLKIT.getStationMapUrl(stationId)+'" alt="" />');
+      widget.body.appendChild(holder);
+      holder.onclick = stationMapHide;
+      
+      return false;
+    }
+    
+    /**
+     * Hide displayed station map
+     */
+    function stationMapHide(){
+      widget.body.getElementsByClassName('station-map-preview')[0].remove();
     }
 
     /**
@@ -319,6 +467,8 @@
      * Widget loading
      */
     widget.onLoad = function(offset){
+      i18n.setCatalog(widget.getValue('language') || widget.locale);
+
       widget.log('Widget loading');
       widget.setValue('offset', offset || 0);
       TOOLKIT.getFeed(FEED_URI, buildDisplay);
@@ -335,23 +485,57 @@
       widget.onLoad(widget.getInt('offset'));
     };
     
+    /**
+     * Widget search
+     * 
+     * @since 1.2
+     */
+    widget.onSearch = function(query, isSearch){
+      /*
+       * Force data as a user can search through Netvibes UI
+       */
+      widget.body.getElementsByClassName('search-input')[0].value = query;
+
+      buildDisplay(T.feed, function(feed){
+        return filterSearch(feed, query);
+      });
+
+      return false;
+    };
+    
+    /**
+     * Cancels search
+     * 
+     * @since 1.2
+     */
+    widget.onResetSearch = function(){
+      widget.onSearch('');
+    };
+    
     /*
      * i18n catalogs
      */
     i18n.catalogs.fr = {
       'Favourite Stations': 'Stations préférées',
-      'Last updated at': 'Dernière mise à jour le',
+      'Updated %s': 'Mis à jour %s',
+      'less than a minute ago': 'il y a moins d\'une minute',
+      'about %s minutes ago': 'il y a environ %s minutes',
+      'more than 5 minutes ago': 'il y a plus de 5 minutes',
       'Stations List': 'Liste des stations',
       'N°': 'N°',
       'Station Name': 'Station',
       'Bikes': 'Vélos',
       'Slots': 'Emplacements',
-      'Fave?': 'Favori ?'
+      'Fave?': 'Favori ?',
+      'Type a name to filter list': 'Saisir un nom pour filtrer'
     };
-    i18n.setCatalog(widget.locale);
   //]]>
   </script>
   <style type="text/css" media="all">
+    .moduleContent{
+      position: relative;
+    }
+    
     table,
     .metadata,
     table.nv-datagrid{
@@ -386,6 +570,28 @@
     }
     
     /*
+     * Map
+     */
+    .station-map-preview{
+      background-color: #cfe9f1;
+      background-color: rgba(0, 0, 0, .5);
+      cursor: pointer;
+      height: 100%;
+      left: 0;
+      position: absolute;
+      text-align: center;
+      top: 0;
+      vertical-align: middle;
+      width: 100%;
+    }
+      .station-map-img{
+        border: 1px solid #666;
+        margin-top: 3em;
+        -webkit-box-shadow: 2px 2px 20px #555;
+        -moz-box-shadow: 2px 2px 20px #555;
+      }
+    
+    /*
      * Add to fave
      */
     .add-to-fave{
@@ -398,6 +604,22 @@
       opacity: 1;
       filter: alpha(opacity = 100);
     }
+    
+    /*
+     * Metadata
+     */
+    .metadata{
+      color: #777;
+      position: relative;
+    }
+      .search-input{
+        padding: 2px 5px;
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 13em;
+        z-index: 10;
+      }
   </style>
   <widget:preferences>
     <preference name="offset" type="hidden" defaultValue="0" />
@@ -405,6 +627,11 @@
     <preference name="display-favourites" type="boolean" defaultValue="true" label="Afficher les stations favorites" />
     <preference name="display-stations" type="boolean" defaultValue="true" label="Afficher la liste des stations" />
     <preference name="limit" type="range" min="5" max="50" step="5" defaultValue="10" label="Nombre de stations par page"></preference>
+    <preference name="language" type="list" label="Langue préférée" defaultValue="fr">
+      <option value="" label="Celle du navigateur (défaut)" />
+      <option value="en" label="English" />
+      <option value="fr" label="French" />
+    </preference>
   </widget:preferences>
 </head>
 <body>
