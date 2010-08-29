@@ -112,10 +112,12 @@
       if (filter instanceof Function) {
         feed.items = filter.call(this, feed.items);
       }
+      else {
+        buildMetadata(feed);
+      }
 
       buildPager(feed);
       buildFavourites(feed, (widget.getValue('favourites') || '').split(','));
-      buildMetadata(feed);
     }
 
     /**
@@ -173,10 +175,27 @@
           meta;
       widget.log('buildMetadata');
 
-      //Last updated at
+      /*
+       * Last Updated at field
+       */
       meta = create('p', {'class': 'metadata-updated-at', 'content': 'test'});
       meta.innerHTML = __('Last updated at')+' ';
       meta.innerHTML += (new Date(feed['pubDate'])).toLocaleString();
+      $c.addContent(meta);
+
+      /*
+       * Search Input
+       * We fires the event only if the content has changed; to avoid collision with keyboard combos
+       */
+      meta = create('input', {'class': 'search-input', 'autocomplete': 'off', 'name': 'q', 'type': 'input', 'placeholder': __('Type a name to filter list')});
+      meta.searchQuery = '';
+      meta.onkeyup = function() {
+        if (this.searchQuery != this.value) {
+          widget.onSearch(this.value, false);
+          this.searchQuery = this.value;
+        }
+      };
+      
       $c.addContent(meta);
     }
 
@@ -473,7 +492,8 @@
       'Station Name': 'Station',
       'Bikes': 'Vélos',
       'Slots': 'Emplacements',
-      'Fave?': 'Favori ?'
+      'Fave?': 'Favori ?',
+      'Type a name to filter list': 'Saisir un nom pour filtrer'
     };
   //]]>
   </script>
@@ -566,12 +586,6 @@
 </head>
 <body>
   <div class="stations-wrapper">
-    <div class="search">
-      <form target="" method="post" onkeyup="widget.onSearch(this.q.value, false); return false;">
-        <input type="search" class="search-input" name="q" value="" />
-      </form>
-    </div>
-
     <div class="metadata"></div>
     <div class="favourite-stations-list"></div>
     <div class="stations-list">Loading...</div>
