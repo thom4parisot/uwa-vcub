@@ -226,7 +226,7 @@
        * Search Input
        * We fires the event only if the content has changed; to avoid collision with keyboard combos
        */
-      meta = create('input', {'class': 'search-input', 'autocomplete': 'off', 'name': 'q', 'type': 'input', 'placeholder': __('Type a name to filter list')});
+      meta = create('input', {'class': 'search-input', 'autocomplete': 'off', 'name': 'q', 'type': 'input', 'placeholder': __('Type a name to filter list'), 'title': __('Type a name to filter list')});
       meta.searchQuery = '';
       meta.onkeyup = function() {
         if (this.searchQuery != this.value) {
