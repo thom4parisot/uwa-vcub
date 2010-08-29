@@ -173,16 +173,10 @@
           container = $e(widget.body.getElementsByClassName('favourite-stations-list')[0]);
       widget.log('buildFavourites');
 
-      for (var i = 0, items_length = items.length; i < items_length; i++)
-      {
-        var item = items[i];
-        
-        if (isStationFave(item['bikes:station-id']))
-        {
-          filteredItems.push(item);
-        }
-      }
-      
+      filteredItems = items.filter(function(item){
+        return isStationFave(item['bikes:station-id']);
+      });
+
       if (widget.getBool('display-favourites') && filteredItems.length)
       {
         var table = create('table', {'class': 'nv-datagrid'});
